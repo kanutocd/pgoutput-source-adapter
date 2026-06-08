@@ -6,3 +6,7 @@
 /pkg/
 /spec/reports/
 /tmp/
+.ignoreme
+*.gemspec
+Gemfile.lock
+/.history/

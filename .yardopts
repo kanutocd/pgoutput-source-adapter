@@ -1,0 +1,9 @@
+--title "pgoutput-source-adapter API Documentation"
+--readme README.md
+--markup markdown
+--output-dir doc
+lib/**/*.rb
+-
+LICENSE.txt
+CHANGELOG.md
+CODE_OF_CONDUCT.md
