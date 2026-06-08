@@ -1,12 +1,9 @@
 # frozen_string_literal: true
 
-require_relative "adapter/version"
+require_relative "../source_adapter"
 
 module Pgoutput
   module Source
-    module Adapter
-      class Error < StandardError; end
-      # Your code goes here...
-    end
+    Adapter = Pgoutput::SourceAdapter
   end
 end
