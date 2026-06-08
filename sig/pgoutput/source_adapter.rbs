@@ -1,0 +1,20 @@
+module Pgoutput
+  module SourceAdapter
+    VERSION: String
+
+    class Error < StandardError
+    end
+
+    class Cdc < CDC::Core::SourceAdapter
+      SOURCE_NAME: String
+
+      def initialize: (?primary_key_resolver: untyped, ?metadata_builder: untyped) -> void
+      def normalize: (untyped event) -> (CDC::Core::ChangeEvent | nil)
+      def normalize_many: (Enumerable[untyped] events) -> Array[CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope]
+    end
+  end
+
+  module Source
+    Adapter: singleton(Pgoutput::SourceAdapter)
+  end
+end

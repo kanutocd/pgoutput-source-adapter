@@ -1,8 +1,5 @@
 module Pgoutput
   module Source
-    module Adapter
-      VERSION: String
-      # See the writing guide of rbs: https://github.com/ruby/rbs#guides
-    end
+    Adapter: singleton(Pgoutput::SourceAdapter)
   end
 end
