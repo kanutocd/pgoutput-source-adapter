@@ -1,43 +1,151 @@
-# Pgoutput::Source::Adapter
+# pgoutput-source-adapter
 
-TODO: Delete this and the text below, and describe your gem
+`pgoutput-source-adapter` adapts decoded pgoutput events into downstream change-event platform primitives.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/pgoutput/source/adapter`. To experiment with that code, run `bin/console` for an interactive prompt.
+The first supported target is the CDC Ecosystem:
+
+```ruby
+Pgoutput::SourceAdapter::Cdc
+```
+
+It normalizes `Pgoutput::Decoder::Events` into `CDC::Core::ChangeEvent` and `CDC::Core::TransactionEnvelope` objects.
+
+## Boundary
+
+The pgoutput family remains standalone:
+
+```text
+pgoutput-client   -> PostgreSQL logical replication transport
+pgoutput-parser   -> pgoutput protocol messages
+pgoutput-decoder  -> typed Ruby row-change events
+```
+
+This gem is the adapter layer:
+
+```text
+Pgoutput::Decoder::Events
+        |
+        v
+Pgoutput::SourceAdapter::Cdc
+        |
+        v
+CDC::Core::ChangeEvent / TransactionEnvelope
+```
+
+That keeps the lower-level pgoutput gems usable outside the CDC Ecosystem while still providing a clean bridge into `cdc-core` for users building CDC platforms.
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
-Install the gem and add to the application's Gemfile by executing:
-
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```ruby
+gem "pgoutput-source-adapter"
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+```ruby
+require "pgoutput/source_adapter"
+```
 
-```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+The generated `bundle gem` require path also works:
+
+```ruby
+require "pgoutput/source/adapter"
 ```
 
 ## Usage
 
-TODO: Write usage instructions here
+Normalize a decoded insert event:
+
+```ruby
+adapter = Pgoutput::SourceAdapter::Cdc.new
+change_event = adapter.normalize(decoded_insert)
+
+change_event.operation
+# => :insert
+
+change_event.schema
+change_event.table
+change_event.new_values
+```
+
+Normalize a transaction-shaped batch:
+
+```ruby
+results = adapter.normalize_many([
+  decoded_begin,
+  decoded_insert,
+  decoded_update,
+  decoded_commit
+])
+
+envelope = results.first
+# => CDC::Core::TransactionEnvelope
+```
+
+## Primary keys
+
+For update and delete events, pgoutput may provide an old-key tuple. When it does, that tuple is used as the `CDC::Core::ChangeEvent#primary_key`.
+
+For insert events, or for sources without old-key tuples, the adapter defaults to `id` / `"id"` when present.
+
+You can provide your own resolver:
+
+```ruby
+adapter = Pgoutput::SourceAdapter::Cdc.new(
+  primary_key_resolver: ->(_event, values) { { "uuid" => values.fetch("uuid") } }
+)
+```
+
+## Metadata
+
+Each normalized event includes pgoutput metadata:
+
+```ruby
+{
+  "source" => "pgoutput",
+  "relation_id" => 123,
+  "pgoutput_event" => "Insert"
+}
+```
+
+Additional metadata can be injected:
+
+```ruby
+adapter = Pgoutput::SourceAdapter::Cdc.new(
+  metadata_builder: ->(_event) { { pipeline: "default" } }
+)
+```
+
+## Public namespace
+
+```ruby
+Pgoutput::SourceAdapter
+Pgoutput::SourceAdapter::Cdc
+```
+
+A compatibility alias is also provided for the generated gem path:
+
+```ruby
+Pgoutput::Source::Adapter
+```
+
+## Non-goals
+
+This gem does not:
+
+- connect to PostgreSQL
+- parse pgoutput protocol messages
+- decode PostgreSQL values
+- run processors
+- manage replication slots
+- persist sink data
+
+Those responsibilities belong to `pgoutput-client`, `pgoutput-parser`, `pgoutput-decoder`, runtime gems, or application code.
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/pgoutput-source-adapter. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/pgoutput-source-adapter/blob/main/CODE_OF_CONDUCT.md).
+```bash
+bundle exec rake
+```
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the Pgoutput::Source::Adapter project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/pgoutput-source-adapter/blob/main/CODE_OF_CONDUCT.md).
+MIT.
