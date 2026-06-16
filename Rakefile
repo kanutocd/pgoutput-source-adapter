@@ -17,6 +17,7 @@ end
 
 YARD::Rake::YardocTask.new(:yard)
 
+desc 'Validate rbs sig files'
 task :steep do
   sh 'bundle exec steep check'
 end

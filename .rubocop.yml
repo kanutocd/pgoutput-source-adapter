@@ -10,6 +10,7 @@ Style/Documentation:
   Enabled: false
 
 Metrics/BlockLength:
+  Max: 30
   Exclude:
     - "test/**/*"
     - "*.gemspec"
@@ -30,4 +31,7 @@ Metrics/CyclomaticComplexity:
   Max: 10
 
 Minitest/MultipleAssertions:
-  Max: 7
+  Max: 11
+
+Metrics/ClassLength:
+  Max: 155

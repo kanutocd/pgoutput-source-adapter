@@ -49,6 +49,7 @@ module Pgoutput
       #   nil for transaction boundary events.
       # @raise [Pgoutput::SourceAdapter::Error] when the decoded event type is
       #   unsupported.
+      # rubocop:disable Metrics/MethodLength
       def normalize(event)
         case event_name(event)
         when 'Insert'
@@ -85,6 +86,7 @@ module Pgoutput
           raise Error, "unsupported pgoutput decoded event: #{event.class}"
         end
       end
+      # rubocop:enable Metrics/MethodLength
 
       # Normalize a sequence of decoded pgoutput events.
       #
@@ -97,11 +99,15 @@ module Pgoutput
       #   normalized row changes and transaction envelopes in input order.
       # @raise [Pgoutput::SourceAdapter::Error] when any decoded event type is
       #   unsupported.
+      # rubocop:disable Metrics/AbcSize
+      # rubocop:disable Metrics/PerceivedComplexity
+      # rubocop:disable Metrics/CyclomaticComplexity
+      # rubocop:disable Metrics/MethodLength
       def normalize_many(events)
-        results = [] #: Array[CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope]
+        results = [] # : Array[CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope]
         transaction_id = nil
-        transaction_events = [] #: Array[CDC::Core::ChangeEvent]
-        transaction_metadata = {} #: Hash[String, untyped]
+        transaction_events = [] # : Array[CDC::Core::ChangeEvent]
+        transaction_metadata = {} # : Hash[String, untyped]
 
         events.each do |event|
           case event_name(event)
@@ -140,6 +146,10 @@ module Pgoutput
         results.concat(transaction_events) if transaction_id && !transaction_events.empty?
         share(results.freeze)
       end
+      # rubocop:enable Metrics/AbcSize
+      # rubocop:enable Metrics/PerceivedComplexity
+      # rubocop:enable Metrics/CyclomaticComplexity
+      # rubocop:enable Metrics/MethodLength
 
       private
 

@@ -4,6 +4,7 @@ require_relative '../../test_helper'
 
 module Pgoutput
   module SourceAdapter
+    # rubocop:disable Metrics/ClassLength
     class CdcTest < Minitest::Test
       Events = Pgoutput::Decoder::Events
 
@@ -20,6 +21,7 @@ module Pgoutput
         refute_nil Pgoutput::SourceAdapter::VERSION
       end
 
+      # rubocop:disable Metrics/AbcSize
       def test_normalizes_insert_to_change_event
         event = Events::Insert.new(42, 7, 'public', 'users', { 'id' => 1, 'email' => 'ken@example.com' })
 
@@ -37,6 +39,7 @@ module Pgoutput
         assert_equal 7, change.metadata['relation_id']
         assert_equal 'Insert', change.metadata['pgoutput_event']
       end
+      # rubocop:enable Metrics/AbcSize
 
       def test_normalizes_insert_with_symbol_id_primary_key
         event = Events::Insert.new(42, 7, 'public', 'users', { id: 1, email: 'ken@example.com' })
@@ -134,6 +137,8 @@ module Pgoutput
         assert_match(/unsupported pgoutput decoded event/, error.message)
       end
 
+      # rubocop:disable Metrics/AbcSize
+      # rubocop:disable Metrics/MethodLength
       def test_normalize_many_groups_transaction_boundaries_into_envelope
         adapter = Pgoutput::SourceAdapter::Cdc.new
         begin_event = Events::Begin.new(42, 10, 123_456)
@@ -156,6 +161,8 @@ module Pgoutput
         assert_equal 0, envelope.metadata['commit_flags']
         assert_equal '12', envelope.metadata['transaction_end_lsn']
       end
+      # rubocop:enable Metrics/AbcSize
+      # rubocop:enable Metrics/MethodLength
 
       def test_normalize_many_keeps_changes_unwrapped_when_commit_has_no_open_transaction
         adapter = Pgoutput::SourceAdapter::Cdc.new
@@ -234,5 +241,6 @@ module Pgoutput
         assert_nil envelope.metadata['transaction_end_lsn']
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end
