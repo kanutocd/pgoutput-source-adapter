@@ -8,8 +8,18 @@ Gem::Specification.new do |spec|
   spec.authors = ['Ken C. Demanawa']
   spec.email = ['kenneth.c.demanawa@gmail.com']
 
-  spec.summary = 'Source adapters for pgoutput decoded events.'
-  spec.description = 'Normalizes pgoutput decoded events into downstream change-event platform primitives, including CDC::Core.'
+  spec.summary = 'Source adapters that normalize pgoutput decoded events into downstream change-event platforms.'
+  spec.description = <<~DESC
+    pgoutput-source-adapter provides source adapters that normalize
+    decoded PostgreSQL pgoutput events into downstream event models.
+
+    The gem currently includes a CDC::Core adapter that transforms
+    pgoutput decoder events into ChangeEvent and TransactionEnvelope
+    primitives while preserving transaction and metadata context.
+
+    This package forms the normalization boundary between the
+    pgoutput family of gems and downstream change-event platforms.
+  DESC
   spec.homepage = 'https://github.com/kanutocd/pgoutput-source-adapter'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.4.0'
