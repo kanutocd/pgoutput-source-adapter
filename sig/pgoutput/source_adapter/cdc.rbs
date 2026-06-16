@@ -1,0 +1,81 @@
+module Pgoutput
+  module SourceAdapter
+    # Normalizes Pgoutput::Decoder::Events into CDC::Core primitives.
+    #
+    # This adapter is intentionally located under the Pgoutput namespace because
+    # it adapts pgoutput decoded events. The target is CDC::Core, so this class
+    # depends on cdc-core while the lower-level pgoutput-client, pgoutput-parser,
+    # and pgoutput-decoder gems remain standalone.
+    #
+    # @example Normalize a decoded insert event
+    #   adapter = Pgoutput::SourceAdapter::Cdc.new
+    #   change_event = adapter.normalize(decoded_insert)
+    #
+    # @example Normalize a decoded transaction event batch
+    #   envelope = adapter.normalize_many([begin_event, insert_event, commit_event]).first
+    #
+    # @api public
+    class Cdc < CDC::Core::SourceAdapter
+      @primary_key_resolver: untyped
+
+      @metadata_builder: untyped
+
+      SOURCE_NAME: "pgoutput"
+
+      # @param primary_key_resolver [#call, nil] optional callable used to infer
+      #   primary keys from decoded row values when pgoutput does not provide an
+      #   old-key tuple.
+      # @param metadata_builder [#call, nil] optional callable that can return
+      #   extra metadata for each decoded event.
+      def initialize: (?primary_key_resolver: untyped?, ?metadata_builder: untyped?) -> void
+
+      # Normalize one decoded pgoutput event.
+      #
+      # Transaction boundary events return nil because they do not represent a
+      # row-level change by themselves. Use #normalize_many when transaction
+      # envelopes are desired.
+      #
+      # @param event [Object] a Pgoutput::Decoder::Events object.
+      # @return [CDC::Core::ChangeEvent, nil]
+      def normalize: (untyped event) -> untyped
+
+      # Normalize a sequence of decoded pgoutput events.
+      #
+      # If the sequence contains transaction boundaries, row changes between a
+      # Begin and Commit are grouped into CDC::Core::TransactionEnvelope. If no
+      # transaction boundaries are present, row changes are returned individually.
+      #
+      # @param events [Enumerable<Object>] decoded pgoutput events.
+      # @return [Array<CDC::Core::ChangeEvent, CDC::Core::TransactionEnvelope>]
+      def normalize_many: (untyped events) -> untyped
+
+      private
+
+      attr_reader primary_key_resolver: untyped
+
+      attr_reader metadata_builder: untyped
+
+      def change_event: (untyped event, operation: untyped, old_values: untyped, new_values: untyped, primary_key: untyped) -> untyped
+
+      def transaction_envelope: (untyped event, transaction_id: untyped, events: untyped, metadata: untyped) -> untyped
+
+      def primary_key_for: (untyped event, untyped values) -> untyped
+
+      def default_primary_key: (untyped _event, untyped values) -> (nil | untyped)
+
+      def metadata_for: (untyped event) -> untyped
+
+      def relation_id_for: (untyped event) -> (untyped | nil)
+
+      def event_name: (untyped event) -> untyped
+
+      def lsn_string: (untyped lsn) -> untyped
+
+      def stringify_keys: (untyped hash) -> untyped
+
+      def compact: (untyped hash) -> untyped
+
+      def share: (untyped object) -> untyped
+    end
+  end
+end

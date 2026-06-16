@@ -1,0 +1,6 @@
+module Pgoutput
+  module SourceAdapter
+    # Current pgoutput-source-adapter gem version.
+    VERSION: String
+  end
+end

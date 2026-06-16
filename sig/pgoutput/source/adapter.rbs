@@ -1,5 +1,6 @@
 module Pgoutput
   module Source
-    Adapter: singleton(Pgoutput::SourceAdapter)
+    # Compatibility alias for Pgoutput::SourceAdapter.
+    Adapter: untyped
   end
 end

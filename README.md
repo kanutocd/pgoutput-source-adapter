@@ -1,5 +1,10 @@
 # pgoutput-source-adapter
 
+[![Gem Version](https://badge.fury.io/rb/pgoutput-source-adapter.svg)](https://badge.fury.io/rb/pgoutput-source-adapter)
+[![CI](https://github.com/kanutocd/pgoutput-source-adapter/workflows/CI/badge.svg)](https://github.com/kanutocd/pgoutput-source-adapter/actions)
+[![Ruby Version](https://img.shields.io/badge/ruby-%3E%3D%203.4-ruby.svg)](https://www.ruby-lang.org/en/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 `pgoutput-source-adapter` adapts decoded pgoutput events into downstream change-event platform primitives.
 
 The first supported target is the CDC Ecosystem:
@@ -148,4 +153,4 @@ bundle exec rake
 
 ## License
 
-MIT.
+[MIT](./LICENSE.txt).

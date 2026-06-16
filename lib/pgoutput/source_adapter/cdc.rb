@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require "cdc/core"
+require 'cdc/core'
 
 unless CDC::Core.const_defined?(:SourceAdapter)
-  raise LoadError, "pgoutput-source-adapter requires a cdc-core version that defines CDC::Core::SourceAdapter"
+  raise LoadError, 'pgoutput-source-adapter requires a cdc-core version that defines CDC::Core::SourceAdapter'
 end
 
 module Pgoutput
@@ -24,13 +24,14 @@ module Pgoutput
     #
     # @api public
     class Cdc < CDC::Core::SourceAdapter
-      SOURCE_NAME = "pgoutput"
+      SOURCE_NAME = 'pgoutput'
 
       # @param primary_key_resolver [#call, nil] optional callable used to infer
       #   primary keys from decoded row values when pgoutput does not provide an
-      #   old-key tuple.
+      #   old-key tuple. The callable receives the decoded event and value hash.
       # @param metadata_builder [#call, nil] optional callable that can return
-      #   extra metadata for each decoded event.
+      #   extra metadata for each decoded event. Returned keys are stringified.
+      # @return [void]
       def initialize(primary_key_resolver: nil, metadata_builder: nil)
         @primary_key_resolver = primary_key_resolver || method(:default_primary_key)
         @metadata_builder = metadata_builder
@@ -44,10 +45,13 @@ module Pgoutput
       # envelopes are desired.
       #
       # @param event [Object] a Pgoutput::Decoder::Events object.
-      # @return [CDC::Core::ChangeEvent, nil]
+      # @return [CDC::Core::ChangeEvent, nil] normalized row change event, or
+      #   nil for transaction boundary events.
+      # @raise [Pgoutput::SourceAdapter::Error] when the decoded event type is
+      #   unsupported.
       def normalize(event)
         case event_name(event)
-        when "Insert"
+        when 'Insert'
           change_event(
             event,
             operation: :insert,
@@ -55,7 +59,7 @@ module Pgoutput
             new_values: event.values,
             primary_key: primary_key_for(event, event.values)
           )
-        when "Update"
+        when 'Update'
           old_values = event.old_values || event.old_key
 
           change_event(
@@ -65,7 +69,7 @@ module Pgoutput
             new_values: event.new_values,
             primary_key: primary_key_for(event, event.new_values)
           )
-        when "Delete"
+        when 'Delete'
           old_values = event.old_values || event.old_key
 
           change_event(
@@ -75,7 +79,7 @@ module Pgoutput
             new_values: nil,
             primary_key: primary_key_for(event, old_values)
           )
-        when "Begin", "Commit"
+        when 'Begin', 'Commit'
           nil
         else
           raise Error, "unsupported pgoutput decoded event: #{event.class}"
@@ -90,22 +94,25 @@ module Pgoutput
       #
       # @param events [Enumerable<Object>] decoded pgoutput events.
       # @return [Array<CDC::Core::ChangeEvent, CDC::Core::TransactionEnvelope>]
+      #   normalized row changes and transaction envelopes in input order.
+      # @raise [Pgoutput::SourceAdapter::Error] when any decoded event type is
+      #   unsupported.
       def normalize_many(events)
-        results = []
+        results = [] #: Array[CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope]
         transaction_id = nil
-        transaction_events = []
-        transaction_metadata = {}
+        transaction_events = [] #: Array[CDC::Core::ChangeEvent]
+        transaction_metadata = {} #: Hash[String, untyped]
 
         events.each do |event|
           case event_name(event)
-          when "Begin"
+          when 'Begin'
             transaction_id = event.transaction_id
             transaction_events = []
             transaction_metadata = metadata_for(event).merge(
-              "begin_final_lsn" => lsn_string(event.final_lsn),
-              "begin_commit_timestamp" => event.commit_timestamp
+              'begin_final_lsn' => lsn_string(event.final_lsn),
+              'begin_commit_timestamp' => event.commit_timestamp
             )
-          when "Commit"
+          when 'Commit'
             if transaction_id || !transaction_events.empty?
               results << transaction_envelope(
                 event,
@@ -161,8 +168,8 @@ module Pgoutput
             commit_lsn: lsn_string(event.commit_lsn),
             committed_at: event.commit_timestamp,
             metadata: metadata.merge(metadata_for(event)).merge(
-              "commit_flags" => event.flags,
-              "transaction_end_lsn" => lsn_string(event.transaction_end_lsn)
+              'commit_flags' => event.flags,
+              'transaction_end_lsn' => lsn_string(event.transaction_end_lsn)
             )
           )
         )
@@ -177,18 +184,18 @@ module Pgoutput
       def default_primary_key(_event, values)
         return nil unless values.respond_to?(:key?)
 
-        if values.key?("id")
-          { "id" => values["id"] }
+        if values.key?('id')
+          { 'id' => values['id'] }
         elsif values.key?(:id)
-          { "id" => values[:id] }
+          { 'id' => values[:id] }
         end
       end
 
       def metadata_for(event)
         metadata = {
-          "source" => SOURCE_NAME,
-          "relation_id" => relation_id_for(event),
-          "pgoutput_event" => event_name(event)
+          'source' => SOURCE_NAME,
+          'relation_id' => relation_id_for(event),
+          'pgoutput_event' => event_name(event)
         }
         extra = metadata_builder&.call(event)
         metadata.merge!(stringify_keys(extra)) if extra
@@ -200,7 +207,7 @@ module Pgoutput
       end
 
       def event_name(event)
-        event.class.name.split("::").last
+        event.class.name.split('::').last
       end
 
       def lsn_string(lsn)
@@ -212,7 +219,7 @@ module Pgoutput
       end
 
       def compact(hash)
-        hash.reject { |_key, value| value.nil? }
+        hash.compact
       end
 
       def share(object)

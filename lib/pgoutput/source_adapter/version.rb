@@ -2,6 +2,9 @@
 
 module Pgoutput
   module SourceAdapter
-    VERSION = "0.1.0"
+    # Current pgoutput-source-adapter gem version.
+    #
+    # @return [String] semantic version published to RubyGems.
+    VERSION = '0.1.0'
   end
 end
